@@ -1292,7 +1292,7 @@ typedef struct acvp_hash_capability {
 } ACVP_HASH_CAP;
 
 typedef struct acvp_kdf135_snmp_capability {
-    ACVP_SL_LIST *pass_lens;
+    ACVP_JSON_DOMAIN_OBJ pass_lens;
     ACVP_NAME_LIST *eng_ids;
 } ACVP_KDF135_SNMP_CAP;
 

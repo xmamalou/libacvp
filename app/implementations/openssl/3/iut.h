@@ -61,6 +61,7 @@ int app_kdf135_x963_handler(ACVP_TEST_CASE *test_case);
 int app_pbkdf_handler(ACVP_TEST_CASE *test_case);
 int app_kdf_tls12_handler(ACVP_TEST_CASE *test_case);
 int app_kdf_tls13_handler(ACVP_TEST_CASE *test_case);
+int app_kdf135_snmp_handler(ACVP_TEST_CASE *test_case);
 int app_dsa_handler(ACVP_TEST_CASE *test_case);
 int app_kas_ecc_handler(ACVP_TEST_CASE *test_case);
 int app_kas_ffc_handler(ACVP_TEST_CASE *test_case);
@@ -110,6 +111,14 @@ ACVP_RESULT register_capabilities_fp_4x(ACVP_CTX *ctx, APP_CONFIG *cfg);
 
 #ifndef OSSL_DIGEST_PARAM_CUSTOMIZATION
 #define OSSL_DIGEST_PARAM_CUSTOMIZATION "customization"
+#endif
+
+#ifndef OSSL_KDF_NAME_SNMPKDF
+#define OSSL_KDF_NAME_SNMPKDF "SNMPKDF"
+#endif
+
+#ifndef OSSL_KDF_PARAM_SNMPKDF_EID
+#define OSSL_KDF_PARAM_SNMPKDF_EID "eid"
 #endif
 
 // Added in 3.5.0 for PQC

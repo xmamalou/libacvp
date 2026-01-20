@@ -1055,3 +1055,54 @@ err:
     if (kctx) EVP_KDF_CTX_free(kctx);
     return rv;
 }
+
+int app_kdf135_snmp_handler(ACVP_TEST_CASE *test_case) {
+    ACVP_KDF135_SNMP_TC *tc;
+    int rv = 1;
+    OSSL_PARAM_BLD *pbld = NULL;
+    OSSL_PARAM *params = NULL;
+    EVP_KDF *kdf = NULL;
+    EVP_KDF_CTX *kctx = NULL;
+    char digest[] = "SHA-1";
+
+    tc = test_case->tc.kdf135_snmp;
+
+    if (!tc->p_len || !tc->engine_id || !tc->password) {
+        printf("Missing test case arguments in kdf135-snmp\n");
+        return rv;
+    }
+
+    kdf = EVP_KDF_fetch(NULL, OSSL_KDF_NAME_SNMPKDF, NULL);
+    kctx = EVP_KDF_CTX_new(kdf);
+    if (!kctx) {
+        printf("Error creating KDF CTX in kdf135-snmp\n");
+        goto err;
+    }
+
+    pbld = OSSL_PARAM_BLD_new();
+    if (!pbld) {
+        printf("Error creating param_bld in kdf135-snmp");
+        goto err;
+    }
+    OSSL_PARAM_BLD_push_octet_string(pbld, OSSL_KDF_PARAM_SNMPKDF_EID, tc->engine_id, tc->engine_id_len);
+    OSSL_PARAM_BLD_push_octet_string(pbld, OSSL_KDF_PARAM_PASSWORD, tc->password, tc->p_len);
+    OSSL_PARAM_BLD_push_utf8_string(pbld, OSSL_KDF_PARAM_DIGEST, digest, 0);
+    params = OSSL_PARAM_BLD_to_param(pbld);
+    if (!params) {
+        printf("Error generating params in kdf135-snmp\n");
+        goto err;
+    }
+
+    if (EVP_KDF_derive(kctx, tc->s_key, tc->skey_len, params) != 1) {
+        printf("Failure deriving key material in kdf135-snmp\n");
+        goto err;
+    }
+
+    rv = 0;
+err:
+    if (pbld) OSSL_PARAM_BLD_free(pbld);
+    if (params) OSSL_PARAM_free(params);
+    if (kdf) EVP_KDF_free(kdf);
+    if (kctx) EVP_KDF_CTX_free(kctx);
+    return rv;
+}
