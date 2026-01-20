@@ -1746,11 +1746,16 @@ static ACVP_RESULT acvp_build_eddsa_register_cap(ACVP_CTX *ctx,JSON_Object *cap_
 }
 
 static ACVP_RESULT acvp_build_kdf135_snmp_register_cap(JSON_Object *cap_obj, ACVP_CAPS_LIST *cap_entry) {
-    ACVP_RESULT result;
+    ACVP_RESULT result = ACVP_INTERNAL_ERR;
     JSON_Array *temp_arr = NULL;
-    ACVP_NAME_LIST *current_engid;
-    ACVP_SL_LIST *current_val;
+    JSON_Value *temp_val = NULL;
+    JSON_Object *temp_obj = NULL;
+    ACVP_NAME_LIST *current_engid = NULL;
+    ACVP_SL_LIST *sl_obj = NULL;
+    ACVP_KDF135_SNMP_CAP *cap = cap_entry->cap.kdf135_snmp_cap;
     const char *revision = NULL;
+
+    if (!cap) return ACVP_NO_CAP;
 
     json_object_set_string(cap_obj, "algorithm", ACVP_KDF135_ALG_STR);
 
@@ -1766,7 +1771,7 @@ static ACVP_RESULT acvp_build_kdf135_snmp_register_cap(JSON_Object *cap_obj, ACV
     json_object_set_value(cap_obj, "engineId", json_value_init_array());
     temp_arr = json_object_get_array(cap_obj, "engineId");
 
-    current_engid = cap_entry->cap.kdf135_snmp_cap->eng_ids;
+    current_engid = cap->eng_ids;
     while (current_engid) {
         json_array_append_string(temp_arr, current_engid->name);
         current_engid = current_engid->next;
@@ -1774,11 +1779,18 @@ static ACVP_RESULT acvp_build_kdf135_snmp_register_cap(JSON_Object *cap_obj, ACV
 
     json_object_set_value(cap_obj, "passwordLength", json_value_init_array());
     temp_arr = json_object_get_array(cap_obj, "passwordLength");
-
-    current_val = cap_entry->cap.kdf135_snmp_cap->pass_lens;
-    while (current_val) {
-        json_array_append_number(temp_arr, current_val->length);
-        current_val = current_val->next;
+    if (cap->pass_lens.increment != 0) {
+        temp_val = json_value_init_object();
+        temp_obj = json_value_get_object(temp_val);
+        json_object_set_number(temp_obj, "min", cap->pass_lens.min);
+        json_object_set_number(temp_obj, "max", cap->pass_lens.max);
+        json_object_set_number(temp_obj, "increment", cap->pass_lens.increment);
+        json_array_append_value(temp_arr, temp_val);
+    }
+    sl_obj = cap->pass_lens.values;
+    while (sl_obj) {
+        json_array_append_number(temp_arr, sl_obj->length);
+        sl_obj = sl_obj->next;
     }
 
     return ACVP_SUCCESS;

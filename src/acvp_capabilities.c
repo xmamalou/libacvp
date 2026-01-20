@@ -5697,7 +5697,48 @@ ACVP_RESULT acvp_cap_kdf135_snmp_set_parm(ACVP_CTX *ctx,
         return ACVP_NO_CAP;
     }
 
-    acvp_append_sl_list(&kdf135_snmp_cap->pass_lens, value);
+    acvp_append_sl_list(&kdf135_snmp_cap->pass_lens.values, value);
+
+    return ACVP_SUCCESS;
+}
+
+ACVP_RESULT acvp_cap_kdf135_snmp_set_domain(ACVP_CTX *ctx,
+                                            ACVP_KDF135_SNMP_PARAM param,
+                                            int min,
+                                            int max,
+                                            int increment) {
+    ACVP_CAPS_LIST *cap;
+    ACVP_KDF135_SNMP_CAP *kdf135_snmp_cap;
+
+    if (!ctx) {
+        return ACVP_NO_CTX;
+    }
+
+    if (param != ACVP_KDF135_SNMP_PASS_LEN) {
+        return ACVP_INVALID_ARG;
+    }
+
+    if (min < ACVP_KDF135_SNMP_PASS_LEN_MIN ||
+        max > ACVP_KDF135_SNMP_PASS_LEN_MAX ||
+        increment % 8 != 0 ) {
+        ACVP_LOG_ERR("Invalid pass len domain for SNMP KDF");
+        return ACVP_INVALID_ARG;
+    }
+
+    cap = acvp_locate_cap_entry(ctx, ACVP_KDF135_SNMP);
+    if (!cap) {
+        ACVP_LOG_ERR("Capability entry for KDF135 SNMP not found, ensure it is enabled before setting parameters");
+        return ACVP_NO_CAP;
+    }
+
+    kdf135_snmp_cap = cap->cap.kdf135_snmp_cap;
+    if (!kdf135_snmp_cap) {
+        return ACVP_NO_CAP;
+    }
+
+    kdf135_snmp_cap->pass_lens.min = min;
+    kdf135_snmp_cap->pass_lens.max = max;
+    kdf135_snmp_cap->pass_lens.increment = increment;
 
     return ACVP_SUCCESS;
 }

@@ -4476,7 +4476,7 @@ ACVP_RESULT acvp_cap_kdf135_x963_set_parm(ACVP_CTX *ctx,
 /**
  * @brief acvp_cap_kdf135_snmp_set_parm() allows an application to specify operational
  *        parameters to be used during a test session with the ACVP server.  This function should
- *        be called after acvp_enable_kdf135_srtp_cap() to specify the parameters for the
+ *        be called after acvp_cap_kdf135_snmp_enable() to specify the parameters for the
  *        corresponding KDF.
  *
  * @param ctx Pointer to ACVP_CTX that was previously created by calling acvp_create_test_session.
@@ -4490,6 +4490,26 @@ ACVP_RESULT acvp_cap_kdf135_snmp_set_parm(ACVP_CTX *ctx,
                                           ACVP_CIPHER kcap,
                                           ACVP_KDF135_SNMP_PARAM param,
                                           int value);
+
+/**
+ * @brief acvp_cap_kdf135_snmp_set_parm() allows an application to specify operational
+ *        parameters to be used during a test session with the ACVP server.  This function should
+ *        be called after acvp_cap_kdf135_snmp_enable() to specify the parameters for the
+ *        corresponding KDF.
+ *
+ * @param ctx Pointer to ACVP_CTX that was previously created by calling acvp_create_test_session.
+ * @param param ACVP_KDF135_SNMP_PARAM enum value specifying parameter
+ * @param min integer minimum for domain parameter
+ * @param max integer maximum for domain parameter
+ * @param increment integer increment for domain parameter
+ *
+ * @return ACVP_RESULT
+ */
+ACVP_RESULT acvp_cap_kdf135_snmp_set_domain(ACVP_CTX *ctx,
+                                            ACVP_KDF135_SNMP_PARAM param,
+                                            int min,
+                                            int max,
+                                            int increment);
 
 /**
  * @brief acvp_enable_kdf135_snmp_engid_parm() allows an application to specify a custom engid to

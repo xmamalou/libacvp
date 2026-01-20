@@ -1029,6 +1029,17 @@ static int enable_hmac(ACVP_CTX *ctx) {
      rv = acvp_cap_kdf_tls13_set_parm(ctx, ACVP_KDF_TLS13_RUNNING_MODE, ACVP_KDF_TLS13_RUN_MODE_PSK_DHE);
      CHECK_ENABLE_CAP_RV(rv);
 
+    rv = acvp_cap_kdf135_snmp_enable(ctx, &app_kdf135_snmp_handler);
+    CHECK_ENABLE_CAP_RV(rv);
+    rv = acvp_cap_set_prereq(ctx, ACVP_KDF135_SNMP, ACVP_PREREQ_SHA, value);
+    CHECK_ENABLE_CAP_RV(rv);
+    rv = acvp_cap_kdf135_snmp_set_domain(ctx, ACVP_KDF135_SNMP_PASS_LEN, 64, 8192, 8);
+    CHECK_ENABLE_CAP_RV(rv);
+    rv = acvp_cap_kdf135_snmp_set_engid(ctx, ACVP_KDF135_SNMP, ENGID1);
+    CHECK_ENABLE_CAP_RV(rv);
+    rv = acvp_cap_kdf135_snmp_set_engid(ctx, ACVP_KDF135_SNMP, ENGID2);
+    CHECK_ENABLE_CAP_RV(rv);
+
  end:
 
      return rv;
