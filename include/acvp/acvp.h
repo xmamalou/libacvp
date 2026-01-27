@@ -1,3 +1,4 @@
+
 /**
  * @file
  * @brief This is the public header file to be included by applications
@@ -273,7 +274,11 @@ typedef enum acvp_cipher {
     ACVP_SLH_DSA_KEYGEN,
     ACVP_SLH_DSA_SIGGEN,
     ACVP_SLH_DSA_SIGVER,
-    ACVP_CIPHER_END
+    ACVP_ASCON_AEAD128, // 120
+    ACVP_ASCON_CXOF128,
+    ACVP_ASCON_HASH256,
+    ACVP_ASCON_XOF128,
+       ACVP_CIPHER_END
 } ACVP_CIPHER;
 
 
@@ -386,6 +391,14 @@ typedef enum acvp_alg_type_dsa {
     ACVP_SUB_DSA_SIGGEN,
     ACVP_SUB_DSA_SIGVER,
 } ACVP_SUB_DSA;
+
+/** @enum ACVP_SUB_ASCON */
+typedef enum acvp_alg_type_ascon {
+    ACVP_SUB_ASCON_AEAD128 = ACVP_ASCON_AEAD128,
+    ACVP_SUB_ASCON_CXOF128,
+    ACVP_SUB_ASCON_HASH256,
+    ACVP_SUB_ASCON_XOF128,
+} ACVP_SUB_ASCON;
 
 /** @enum ACVP_SUB_RSA */
 typedef enum acvp_alg_type_rsa {
@@ -1959,6 +1972,70 @@ typedef struct acvp_dsa_tc_t {
     unsigned char *msg;
 } ACVP_DSA_TC;
 
+/** @enum ACVP_ASCON_MODE */
+typedef enum acvp_ascon_mode {
+    ACVP_ASCON_MODE_AEAD128 = 0,
+    ACVP_ASCON_MODE_CXOF128,
+    ACVP_ASCON_MODE_HASH256,
+    ACVP_ASCON_MODE_XOF128,
+    ACVP_ASCON_MODE_NONE,
+} ACVP_ASCON_MODE;
+
+/** @enum ACVP_ASCON_PARM */
+typedef enum acvp_ascon_parm {
+    ACVP_ASCON_MODE_PARM = 1,
+    ACVP_ASCON_REV_PARM,
+    ACVP_ASCON_DIR_PARM,
+    ACVP_ASCON_PAYLEN_PARM,
+    ACVP_ASCON_ADLEN_PARM,
+    ACVP_ASCON_TAGLEN_PARM,
+    ACVP_ASCON_NONCEMASK_PARM,
+    ACVP_ASCON_MSGLEN_PARM,
+    ACVP_ASCON_OUTLEN_PARM,
+    ACVP_ASCON_CUSSTRLEN_PARM,
+} ACVP_ASCON_PARM;
+
+typedef enum acvp_ascon_direction {
+    ACVP_ASCON_ENCRYPT = 1,
+    ACVP_ASCON_DECRYPT,
+} ACVP_ASCON_DIRECTION;
+
+typedef enum acvp_ascon_testtype {
+    ACVP_ASCON_AFT = 1,
+} ACVP_ASCON_TESTTYPE;
+
+/**
+ * @struct ACVP_ASCON_TC
+ * @brief This struct holds data that represents a single test case for ASCON
+ * testing. This data is passed between libacvp and the crypto module.
+ */
+typedef struct acvp_ascon_tc_t {
+    int tg_id;
+    int tc_id;
+    ACVP_CIPHER cipher;
+    ACVP_ASCON_TESTTYPE testtype;
+    ACVP_ASCON_MODE mode;
+    ACVP_ASCON_DIRECTION direction;
+    bool supports_nonce_mask;
+    unsigned char *key;
+    unsigned char *second_key;
+    unsigned char *nonce;
+    unsigned char *ad;
+    int ad_len;
+    unsigned char *tag;
+    int tag_len;
+    bool tag_match;
+    unsigned char *pt;
+    unsigned char *ct;
+    int payload_len;
+    unsigned char *msg;
+    int msg_len;
+    unsigned char *md;
+    int out_len;
+    unsigned char *cs;
+    int cs_len;
+} ACVP_ASCON_TC;
+
 /** @enum ACVP_KAS_ECC_MODE */
 typedef enum acvp_kas_ecc_mode {
     ACVP_KAS_ECC_MODE_COMPONENT = 1,
@@ -2997,8 +3074,11 @@ typedef struct acvp_test_case_t {
         ACVP_ML_DSA_TC *ml_dsa;
         ACVP_ML_KEM_TC *ml_kem;
         ACVP_SLH_DSA_TC *slh_dsa;
-    } tc; //!< the union abstracting the test case for passing to the user application
+        ACVP_ASCON_TC *ascon;
+    } tc; //!< the union abstracting the test case for passing to the user
+          //!< application
 } ACVP_TEST_CASE;
+
 
 
 
@@ -3331,6 +3411,44 @@ ACVP_RESULT acvp_cap_dsa_set_parm(ACVP_CTX *ctx,
                                   ACVP_DSA_MODE mode,
                                   ACVP_DSA_PARM param,
                                   int value);
+
+/**
+ * @brief acvp_enable_ascon_cap()
+ *        This function should be used to enable ASCON capabilities. Specific
+ * modes and parameters can use acvp_cap_ascon_set_parm.
+ *
+ *        When the application enables a crypto capability, such as ASCON, it
+ * also needs to specify a callback function that will be used by libacvp when
+ * that crypto capability is needed during a test session.
+ *
+ * @param ctx Pointer to ACVP_CTX that was previously created by calling
+ * acvp_create_test_session.
+ * @param cipher ACVP_CIPHER enum value identifying the crypto capability.
+ * @param crypto_handler Address of function implemented by application that is
+ * invoked by libacvp when the crypto capability is needed during a test
+ * session. This crypto_handler function is expected to return 0 on success and
+ * 1 for failure.
+ *
+ * @return ACVP_RESULT
+ */
+ACVP_RESULT
+acvp_cap_ascon_enable(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                      int (*crypto_handler)(ACVP_TEST_CASE *test_case));
+
+ACVP_RESULT
+acvp_cap_ascon_set_value(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                         ACVP_ASCON_MODE mode, ACVP_ASCON_PARM param,
+                         int value);
+
+ACVP_RESULT
+acvp_cap_ascon_append_value(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                            ACVP_ASCON_MODE mode, ACVP_ASCON_PARM param,
+                            int value);
+
+ACVP_RESULT
+acvp_cap_ascon_set_domain(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                          ACVP_ASCON_MODE mode, ACVP_ASCON_PARM param, int min,
+                          int max, int increment);
 
 /**
  * @brief acvp_enable_kas_ecc_cap()

@@ -2996,6 +2996,218 @@ static ACVP_RESULT acvp_build_dsa_register_cap(JSON_Object *cap_obj,
     return ACVP_SUCCESS;
 }
 
+static ACVP_RESULT acvp_build_ascon_aead128_cap(ACVP_CTX *ctx,
+                                                JSON_Object *cap_obj,
+                                                ACVP_CAPS_LIST *cap_entry) {
+    json_object_set_value(cap_obj, "direction", json_value_init_array());
+    JSON_Array *d_arr = json_object_get_array(cap_obj, "direction");
+
+    ACVP_ASCON_CAP *cap = cap_entry->cap.ascon_cap;
+
+    if (cap->direction) {
+        ACVP_PARAM_LIST *item = cap->direction;
+
+        while (item) {
+            ACVP_ASCON_DIRECTION dir = (ACVP_ASCON_DIRECTION)item->param;
+            switch (dir) {
+            case ACVP_ASCON_ENCRYPT:
+                ACVP_LOG_INFO("    Direction: Encrypt");
+                json_array_append_string(d_arr, "encrypt");
+                break;
+            case ACVP_ASCON_DECRYPT:
+                ACVP_LOG_INFO("    Direction: Decrypt");
+                json_array_append_string(d_arr, "decrypt");
+                break;
+            default:
+                break;
+            }
+
+            item = item->next;
+        }
+    }
+
+    json_object_set_value(cap_obj, "payloadLen", json_value_init_array());
+    JSON_Array *pl_arr = json_object_get_array(cap_obj, "payloadLen");
+    JSON_Value *pl_value = json_value_init_object();
+    JSON_Object *pl_obj = json_value_get_object(pl_value);
+    json_object_set_number(pl_obj, "min", cap->payload_len.min);
+    json_object_set_number(pl_obj, "max", cap->payload_len.max);
+    json_object_set_number(pl_obj, "increment", cap->payload_len.increment);
+    json_array_append_value(pl_arr, pl_value);
+    ACVP_LOG_INFO("    PayloadLen: { min = %d, max = %d, increment = %d}",
+                  cap->payload_len.min, cap->payload_len.max,
+                  cap->payload_len.increment);
+
+    json_object_set_value(cap_obj, "adLen", json_value_init_array());
+    JSON_Array *ad_arr = json_object_get_array(cap_obj, "adLen");
+    JSON_Value *ad_value = json_value_init_object();
+    JSON_Object *ad_obj = json_value_get_object(ad_value);
+    json_object_set_number(ad_obj, "min", cap->ad_len.min);
+    json_object_set_number(ad_obj, "max", cap->ad_len.max);
+    json_object_set_number(ad_obj, "increment", cap->payload_len.increment);
+    json_array_append_value(ad_arr, ad_value);
+    ACVP_LOG_INFO("    AdLen: { min = %d, max = %d, increment = %d}",
+                  cap->ad_len.min, cap->ad_len.max, cap->ad_len.increment);
+
+    json_object_set_value(cap_obj, "tagLen", json_value_init_array());
+    JSON_Array *tag_arr = json_object_get_array(cap_obj, "tagLen");
+    JSON_Value *tag_value = json_value_init_object();
+    JSON_Object *tag_obj = json_value_get_object(tag_value);
+    json_object_set_number(tag_obj, "min", cap->tag_len.min);
+    json_object_set_number(tag_obj, "max", cap->tag_len.max);
+    json_object_set_number(tag_obj, "increment", cap->payload_len.increment);
+    json_array_append_value(tag_arr, tag_value);
+    ACVP_LOG_INFO("    TagLen: { min = %d, max = %d, increment = %d}",
+                  cap->tag_len.min, cap->tag_len.max, cap->tag_len.increment);
+
+    json_object_set_value(cap_obj, "supportsNonceMasking",
+                          json_value_init_array());
+    JSON_Array *nonce_arr =
+        json_object_get_array(cap_obj, "supportsNonceMasking");
+    json_array_append_boolean(nonce_arr, cap->nonce_masking);
+    ACVP_LOG_INFO("    NonceMask: %d", cap->nonce_masking);
+
+    return ACVP_SUCCESS;
+}
+
+static ACVP_RESULT acvp_build_ascon_cxof128_cap(ACVP_CTX *ctx,
+                                                JSON_Object *cap_obj,
+                                                ACVP_CAPS_LIST *cap_entry) {
+    ACVP_ASCON_CAP *cap = cap_entry->cap.ascon_cap;
+
+    json_object_set_value(cap_obj, "messageLength", json_value_init_array());
+    JSON_Array *msg_arr = json_object_get_array(cap_obj, "outputLength");
+    JSON_Value *msg_value = json_value_init_object();
+    JSON_Object *msg_obj = json_value_get_object(msg_value);
+    json_object_set_number(msg_obj, "min", cap->msg_len.min);
+    json_object_set_number(msg_obj, "max", cap->msg_len.max);
+    json_object_set_number(msg_obj, "increment", cap->msg_len.increment);
+    json_array_append_value(msg_arr, msg_value);
+
+    JSON_Array *out_arr = json_object_get_array(cap_obj, "outputLength");
+    JSON_Value *out_value = json_value_init_object();
+    JSON_Object *out_obj = json_value_get_object(out_value);
+    json_object_set_number(out_obj, "min", cap->out_len.min);
+    json_object_set_number(out_obj, "max", cap->out_len.max);
+    json_object_set_number(out_obj, "increment", cap->out_len.increment);
+    json_array_append_value(out_arr, out_value);
+
+    JSON_Array *cstr_arr = json_object_get_array(cap_obj, "customizationStringLength");
+    JSON_Value *cstr_value = json_value_init_object();
+    JSON_Object *cstr_obj = json_value_get_object(cstr_value);
+    json_object_set_number(cstr_obj, "min", cap->cusstr_len.min);
+    json_object_set_number(cstr_obj, "max", cap->cusstr_len.max);
+    json_object_set_number(cstr_obj, "increment", cap->cusstr_len.increment);
+    json_array_append_value(cstr_arr, cstr_value);
+
+    return ACVP_SUCCESS;
+}
+
+static ACVP_RESULT acvp_build_ascon_hash256_cap(ACVP_CTX *ctx,
+                                                JSON_Object *cap_obj,
+                                                ACVP_CAPS_LIST *cap_entry) {
+    ACVP_ASCON_CAP *cap = cap_entry->cap.ascon_cap;
+
+    json_object_set_value(cap_obj, "messageLength", json_value_init_array());
+    JSON_Array *msg_arr = json_object_get_array(cap_obj, "messageLength");
+    JSON_Value *msg_value = json_value_init_object();
+    JSON_Object *msg_obj = json_value_get_object(msg_value);
+    json_object_set_number(msg_obj, "min", cap->msg_len.min);
+    json_object_set_number(msg_obj, "max", cap->msg_len.max);
+    json_object_set_number(msg_obj, "increment", cap->msg_len.increment);
+    json_array_append_value(msg_arr, msg_value);
+
+    return ACVP_SUCCESS;
+}
+
+static ACVP_RESULT acvp_build_ascon_xof128_cap(ACVP_CTX *ctx,
+                                                JSON_Object *cap_obj,
+                                                ACVP_CAPS_LIST *cap_entry) {
+    ACVP_ASCON_CAP *cap = cap_entry->cap.ascon_cap;
+
+    json_object_set_value(cap_obj, "messageLength", json_value_init_array());
+    JSON_Array *msg_arr = json_object_get_array(cap_obj, "outputLength");
+    JSON_Value *msg_value = json_value_init_object();
+    JSON_Object *msg_obj = json_value_get_object(msg_value);
+    json_object_set_number(msg_obj, "min", cap->msg_len.min);
+    json_object_set_number(msg_obj, "max", cap->msg_len.max);
+    json_object_set_number(msg_obj, "increment", cap->msg_len.increment);
+    json_array_append_value(msg_arr, msg_value);
+
+    json_object_set_value(cap_obj, "outputLength", json_value_init_array());
+    JSON_Array *out_arr = json_object_get_array(cap_obj, "outputLength");
+    JSON_Value *out_value = json_value_init_object();
+    JSON_Object *out_obj = json_value_get_object(out_value);
+    json_object_set_number(out_obj, "min", cap->out_len.min);
+    json_object_set_number(out_obj, "max", cap->out_len.max);
+    json_object_set_number(out_obj, "increment", cap->out_len.increment);
+    json_array_append_value(out_arr, out_value);
+
+    return ACVP_SUCCESS;
+}
+
+static ACVP_RESULT acvp_build_ascon_register_cap(ACVP_CTX *ctx,
+                                                 JSON_Object *cap_obj,
+                                                 ACVP_CAPS_LIST *cap_entry) {
+    ACVP_RESULT result;
+    const char *revision = NULL;
+
+    if (!cap_entry->cap.ascon_cap) {
+        return ACVP_NO_CAP;
+    }
+
+    ACVP_ASCON_CAP *cap = cap_entry->cap.ascon_cap;
+    if (cap->cap_mode == ACVP_ASCON_MODE_NONE) {
+        return ACVP_NO_CAP;
+    }
+
+    json_object_set_string(cap_obj, "algorithm", "Ascon");
+
+    revision = acvp_lookup_cipher_revision(cap_entry->cipher);
+    if (revision == NULL)
+        return ACVP_INVALID_ARG;
+    json_object_set_string(cap_obj, "revision", revision);
+
+    switch (cap->cap_mode) {
+    case ACVP_ASCON_MODE_AEAD128:
+        json_object_set_string(cap_obj, "mode", "AEAD128");
+        break;
+    case ACVP_ASCON_MODE_CXOF128:
+        json_object_set_string(cap_obj, "mode", "CXOF128");
+        break;
+    case ACVP_ASCON_MODE_HASH256:
+        json_object_set_string(cap_obj, "mode", "Hash256");
+        break;
+    case ACVP_ASCON_MODE_XOF128:
+        json_object_set_string(cap_obj, "mode", "XOF128");
+        break;
+    default:
+        return ACVP_INVALID_ARG;
+    }
+    result = acvp_lookup_prereqVals(cap_obj, cap_entry);
+    if (result != ACVP_SUCCESS) {
+        return result;
+    }
+
+    switch (cap_entry->cipher) {
+    case ACVP_ASCON_AEAD128:
+        acvp_build_ascon_aead128_cap(ctx, cap_obj, cap_entry);
+        break;
+    case ACVP_ASCON_CXOF128:
+        acvp_build_ascon_cxof128_cap(ctx, cap_obj, cap_entry);
+        break;
+    case ACVP_ASCON_HASH256:
+        acvp_build_ascon_hash256_cap(ctx, cap_obj, cap_entry);
+        break;
+    case ACVP_ASCON_XOF128:
+        acvp_build_ascon_xof128_cap(ctx, cap_obj, cap_entry);
+        break;
+    default:
+        return ACVP_NO_CAP;
+    }
+    return ACVP_SUCCESS;
+}
+
 static ACVP_RESULT acvp_lookup_kas_ecc_prereqVals(JSON_Object *cap_obj,
                                                   ACVP_KAS_ECC_CAP_MODE *kas_ecc_mode) {
     JSON_Array *prereq_array = NULL;
@@ -5667,6 +5879,12 @@ ACVP_RESULT acvp_build_registration_json(ACVP_CTX *ctx, JSON_Value **reg) {
             case ACVP_DSA_SIGVER:
                 rv = acvp_build_dsa_register_cap(cap_obj, cap_entry, ACVP_DSA_MODE_SIGVER);
                 break;
+            case ACVP_ASCON_AEAD128:
+            case ACVP_ASCON_CXOF128:
+            case ACVP_ASCON_HASH256:
+            case ACVP_ASCON_XOF128:
+                 rv = acvp_build_ascon_register_cap(ctx, cap_obj, cap_entry);
+                 break;
             case ACVP_RSA_KEYGEN:
                 rv = acvp_build_rsa_keygen_register_cap(cap_obj, cap_entry);
                 break;
@@ -6070,4 +6288,3 @@ ACVP_RESULT acvp_build_validation(ACVP_CTX *ctx,
 
     return ACVP_SUCCESS;
 }
-
