@@ -54,6 +54,18 @@ static ACVP_DSA_CAP *allocate_dsa_cap(void) {
     return cap;
 }
 
+static ACVP_ASCON_CAP *allocate_ascon_cap(void) {
+    ACVP_ASCON_CAP *cap = NULL;
+
+    // Allocate the capability object
+    cap = calloc(1, sizeof(ACVP_ASCON_CAP));
+    if (!cap)
+        return NULL;
+
+    // Allocate the array of ascon_mode
+    return cap;
+}
+
 static ACVP_KAS_ECC_CAP *allocate_kas_ecc_cap(void) {
     ACVP_KAS_ECC_CAP *cap = NULL;
     ACVP_KAS_ECC_CAP_MODE *modes = NULL;
@@ -149,10 +161,9 @@ static ACVP_SAFE_PRIMES_CAP *allocate_safe_primes_cap(void) {
  *
  * @return ACVP_RESULT
  */
-static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
-                                        ACVP_CAP_TYPE type,
-                                        ACVP_CIPHER cipher,
-                                        int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+static ACVP_RESULT
+acvp_cap_list_append(ACVP_CTX *ctx, ACVP_CAP_TYPE type, ACVP_CIPHER cipher,
+                     int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_CAPS_LIST *cap_entry, *cap_e2;
     ACVP_RESULT rv = ACVP_SUCCESS;
 
@@ -206,7 +217,36 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             goto err;
         }
         break;
+    case ACVP_ASCON_TYPE:
+        cap_entry->cap.ascon_cap = allocate_ascon_cap();
+        if (!cap_entry->cap.ascon_cap) {
+            rv = ACVP_MALLOC_FAIL;
+            goto err;
+        }
 
+        switch (cipher) {
+        case ACVP_ASCON_AEAD128:
+            cap_entry->cap.ascon_cap->cap_mode = ACVP_ASCON_MODE_AEAD128;
+            cap_entry->cap.ascon_cap->cipher = ACVP_ASCON_AEAD128;
+            break;
+        case ACVP_ASCON_CXOF128:
+            cap_entry->cap.ascon_cap->cap_mode = ACVP_ASCON_MODE_CXOF128;
+            cap_entry->cap.ascon_cap->cipher = ACVP_ASCON_CXOF128;
+            break;
+        case ACVP_ASCON_HASH256:
+            cap_entry->cap.ascon_cap->cap_mode = ACVP_ASCON_MODE_HASH256;
+            cap_entry->cap.ascon_cap->cipher = ACVP_ASCON_HASH256;
+            break;
+        case ACVP_ASCON_XOF128:
+            cap_entry->cap.ascon_cap->cap_mode = ACVP_ASCON_MODE_XOF128;
+            cap_entry->cap.ascon_cap->cipher = ACVP_ASCON_XOF128;
+            break;
+        default:
+            ACVP_LOG_ERR("Invalid cipher type for Ascon [found: %d]", cipher);
+            rv = ACVP_INVALID_ARG;
+            goto err;
+        }
+        break;
     case ACVP_ECDSA_KEYGEN_TYPE:
         if (cipher != ACVP_ECDSA_KEYGEN) {
             rv = ACVP_INVALID_ARG;
@@ -431,7 +471,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kda_onestep_cap = calloc(1, sizeof(ACVP_KDA_ONESTEP_CAP));
+        cap_entry->cap.kda_onestep_cap =
+            calloc(1, sizeof(ACVP_KDA_ONESTEP_CAP));
         if (!cap_entry->cap.kda_onestep_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -443,7 +484,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kda_twostep_cap = calloc(1, sizeof(ACVP_KDA_TWOSTEP_CAP));
+        cap_entry->cap.kda_twostep_cap =
+            calloc(1, sizeof(ACVP_KDA_TWOSTEP_CAP));
         if (!cap_entry->cap.kda_twostep_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -491,7 +533,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_ikev1_cap = calloc(1, sizeof(ACVP_KDF135_IKEV1_CAP));
+        cap_entry->cap.kdf135_ikev1_cap =
+            calloc(1, sizeof(ACVP_KDF135_IKEV1_CAP));
         if (!cap_entry->cap.kdf135_ikev1_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -503,7 +546,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_ikev2_cap = calloc(1, sizeof(ACVP_KDF135_IKEV2_CAP));
+        cap_entry->cap.kdf135_ikev2_cap =
+            calloc(1, sizeof(ACVP_KDF135_IKEV2_CAP));
         if (!cap_entry->cap.kdf135_ikev2_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -515,7 +559,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_snmp_cap = calloc(1, sizeof(ACVP_KDF135_SNMP_CAP));
+        cap_entry->cap.kdf135_snmp_cap =
+            calloc(1, sizeof(ACVP_KDF135_SNMP_CAP));
         if (!cap_entry->cap.kdf135_snmp_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -527,7 +572,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_srtp_cap = calloc(1, sizeof(ACVP_KDF135_SRTP_CAP));
+        cap_entry->cap.kdf135_srtp_cap =
+            calloc(1, sizeof(ACVP_KDF135_SRTP_CAP));
         if (!cap_entry->cap.kdf135_srtp_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -551,7 +597,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_x942_cap = calloc(1, sizeof(ACVP_KDF135_X942_CAP));
+        cap_entry->cap.kdf135_x942_cap =
+            calloc(1, sizeof(ACVP_KDF135_X942_CAP));
         if (!cap_entry->cap.kdf135_x942_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -563,7 +610,8 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_INVALID_ARG;
             goto err;
         }
-        cap_entry->cap.kdf135_x963_cap = calloc(1, sizeof(ACVP_KDF135_X963_CAP));
+        cap_entry->cap.kdf135_x963_cap =
+            calloc(1, sizeof(ACVP_KDF135_X963_CAP));
         if (!cap_entry->cap.kdf135_x963_cap) {
             rv = ACVP_MALLOC_FAIL;
             goto err;
@@ -582,7 +630,7 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
         }
         break;
 
-        case ACVP_KDF_TLS12_TYPE:
+    case ACVP_KDF_TLS12_TYPE:
         if (cipher != ACVP_KDF_TLS12) {
             rv = ACVP_INVALID_ARG;
             goto err;
@@ -657,7 +705,7 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
             rv = ACVP_MALLOC_FAIL;
             goto err;
         }
-        cap_entry->cap.sym_cap->perform_ctr_tests = 1; // true by default
+        cap_entry->cap.sym_cap->perform_ctr_tests = 1;    // true by default
         cap_entry->cap.sym_cap->dulen_matches_paylen = 1; // true by default
         break;
 
@@ -787,25 +835,24 @@ static ACVP_RESULT acvp_cap_list_append(ACVP_CTX *ctx,
     return ACVP_SUCCESS;
 
 err:
-    if (cap_entry) free(cap_entry);
+    if (cap_entry)
+        free(cap_entry);
 
     return rv;
 }
 
-static ACVP_RESULT acvp_validate_kdf135_ssh_param_value(ACVP_KDF135_SSH_METHOD method, ACVP_HASH_ALG param) {
+static ACVP_RESULT
+acvp_validate_kdf135_ssh_param_value(ACVP_KDF135_SSH_METHOD method,
+                                     ACVP_HASH_ALG param) {
     ACVP_RESULT retval = ACVP_INVALID_ARG;
 
     if ((method < ACVP_SSH_METH_MAX) && (method > 0)) {
-        if ((param & ACVP_SHA3_224) ||
-            (param & ACVP_SHA3_256) ||
-            (param & ACVP_SHA3_384) ||
-            (param & ACVP_SHA3_512)) {
+        if ((param & ACVP_SHA3_224) || (param & ACVP_SHA3_256) ||
+            (param & ACVP_SHA3_384) || (param & ACVP_SHA3_512)) {
             retval = ACVP_INVALID_ARG;
 
-        } else if ((param & ACVP_SHA1) ||
-                   (param & ACVP_SHA224) ||
-                   (param & ACVP_SHA256) ||
-                   (param & ACVP_SHA384) ||
+        } else if ((param & ACVP_SHA1) || (param & ACVP_SHA224) ||
+                   (param & ACVP_SHA256) || (param & ACVP_SHA384) ||
                    (param & ACVP_SHA512)) {
             retval = ACVP_SUCCESS;
         }
@@ -813,14 +860,13 @@ static ACVP_RESULT acvp_validate_kdf135_ssh_param_value(ACVP_KDF135_SSH_METHOD m
     return retval;
 }
 
-static ACVP_RESULT acvp_validate_kdf135_srtp_param_value(ACVP_KDF135_SRTP_PARAM param, int value) {
+static ACVP_RESULT
+acvp_validate_kdf135_srtp_param_value(ACVP_KDF135_SRTP_PARAM param, int value) {
     ACVP_RESULT retval = ACVP_INVALID_ARG;
 
     switch (param) {
     case ACVP_SRTP_AES_KEYLEN:
-        if (value == 128 ||
-            value == 192 ||
-            value == 256) {
+        if (value == 128 || value == 192 || value == 256) {
             retval = ACVP_SUCCESS;
         }
         break;
@@ -839,7 +885,9 @@ static ACVP_RESULT acvp_validate_kdf135_srtp_param_value(ACVP_KDF135_SRTP_PARAM 
     return retval;
 }
 
-static ACVP_RESULT acvp_validate_kdf135_x942_domain_value(ACVP_KDF135_X942_PARM param, int min, int max, int inc) {
+static ACVP_RESULT
+acvp_validate_kdf135_x942_domain_value(ACVP_KDF135_X942_PARM param, int min,
+                                       int max, int inc) {
     switch (param) {
     case ACVP_KDF_X942_KEY_LEN:
     case ACVP_KDF_X942_ZZ_LEN:
@@ -863,20 +911,25 @@ static ACVP_RESULT acvp_validate_kdf135_x942_domain_value(ACVP_KDF135_X942_PARM 
     return ACVP_INVALID_ARG;
 }
 
-static ACVP_RESULT acvp_validate_kdf108_param_value(ACVP_CTX *ctx, ACVP_KDF108_PARM param, int value) {
+static ACVP_RESULT acvp_validate_kdf108_param_value(ACVP_CTX *ctx,
+                                                    ACVP_KDF108_PARM param,
+                                                    int value) {
     ACVP_RESULT retval = ACVP_INVALID_ARG;
 
     switch (param) {
     case ACVP_KDF108_KDF_MODE:
-        ACVP_LOG_ERR("No need to explicitly enable mode string. It is set implicitly as params are added to a mode.");
+        ACVP_LOG_ERR("No need to explicitly enable mode string. It is set "
+                     "implicitly as params are added to a mode.");
         break;
     case ACVP_KDF108_MAC_MODE:
-        if (value > ACVP_KDF108_MAC_MODE_MIN && value < ACVP_KDF108_MAC_MODE_MAX) {
+        if (value > ACVP_KDF108_MAC_MODE_MIN &&
+            value < ACVP_KDF108_MAC_MODE_MAX) {
             retval = ACVP_SUCCESS;
         }
         break;
     case ACVP_KDF108_FIXED_DATA_ORDER:
-        if (value > ACVP_KDF108_FIXED_DATA_ORDER_MIN && value < ACVP_KDF108_FIXED_DATA_ORDER_MAX) {
+        if (value > ACVP_KDF108_FIXED_DATA_ORDER_MIN &&
+            value < ACVP_KDF108_FIXED_DATA_ORDER_MAX) {
             retval = ACVP_SUCCESS;
         }
         break;
@@ -898,13 +951,15 @@ static ACVP_RESULT acvp_validate_kdf108_param_value(ACVP_CTX *ctx, ACVP_KDF108_P
         break;
     case ACVP_KDF108_DERIVATION_KEYLEN:
     case ACVP_KDF108_DERIVED_KEYLEN:
-        if (value >= 112 && value <= ACVP_KDF108_KEYIN_BIT_MAX && value % 8 == 0) {
+        if (value >= 112 && value <= ACVP_KDF108_KEYIN_BIT_MAX &&
+            value % 8 == 0) {
             retval = ACVP_SUCCESS;
         }
         break;
     case ACVP_KDF108_CONTEXT_LEN:
     case ACVP_KDF108_LABEL_LEN:
-        if (value >= 8 && value <= ACVP_KDF108_KEYIN_BIT_MAX && value % 8 == 0) {
+        if (value >= 8 && value <= ACVP_KDF108_KEYIN_BIT_MAX &&
+            value % 8 == 0) {
             retval = ACVP_SUCCESS;
         }
         break;
@@ -981,8 +1036,7 @@ static ACVP_RESULT acvp_add_dsa_mode_parm(ACVP_CTX *ctx,
 // Add top level DSA pqggen parameters
 static ACVP_RESULT acvp_add_dsa_pqggen_parm(ACVP_CTX *ctx,
                                             ACVP_DSA_CAP_MODE *dsa_cap_mode,
-                                            ACVP_DSA_PARM param,
-                                            int value) {
+                                            ACVP_DSA_PARM param, int value) {
     switch (param) {
     case ACVP_DSA_GENPQ:
         switch (value) {
@@ -1014,7 +1068,8 @@ static ACVP_RESULT acvp_add_dsa_pqggen_parm(ACVP_CTX *ctx,
         break;
     case ACVP_DSA_LN1024_160:
         // allow for verify only
-        if (dsa_cap_mode->cap_mode == ACVP_DSA_MODE_SIGVER || dsa_cap_mode->cap_mode == ACVP_DSA_MODE_PQGVER) {
+        if (dsa_cap_mode->cap_mode == ACVP_DSA_MODE_SIGVER ||
+            dsa_cap_mode->cap_mode == ACVP_DSA_MODE_PQGVER) {
             return acvp_add_dsa_mode_parm(ctx, dsa_cap_mode, param, value);
         } else {
             return ACVP_INVALID_ARG;
@@ -1035,8 +1090,7 @@ static ACVP_RESULT acvp_add_dsa_pqggen_parm(ACVP_CTX *ctx,
 // Add top level DSA pqggen parameters
 static ACVP_RESULT acvp_add_dsa_keygen_parm(ACVP_CTX *ctx,
                                             ACVP_DSA_CAP_MODE *dsa_cap_mode,
-                                            ACVP_DSA_PARM param,
-                                            int value) {
+                                            ACVP_DSA_PARM param, int value) {
     switch (param) {
     case ACVP_DSA_LN2048_224:
     case ACVP_DSA_LN2048_256:
@@ -1054,7 +1108,9 @@ static ACVP_RESULT acvp_add_dsa_keygen_parm(ACVP_CTX *ctx,
     return ACVP_SUCCESS;
 }
 
-static ACVP_RESULT acvp_validate_sym_cipher_parm_value(ACVP_CIPHER cipher, ACVP_SYM_CIPH_PARM parm, int value) {
+static ACVP_RESULT acvp_validate_sym_cipher_parm_value(ACVP_CIPHER cipher,
+                                                       ACVP_SYM_CIPH_PARM parm,
+                                                       int value) {
     ACVP_RESULT retval = ACVP_INVALID_ARG;
     ACVP_SUB_AES aes_alg = 0;
     ACVP_SUB_TDES tdes_alg = 0;
@@ -1067,7 +1123,8 @@ static ACVP_RESULT acvp_validate_sym_cipher_parm_value(ACVP_CIPHER cipher, ACVP_
         switch (aes_alg) {
         case ACVP_SUB_AES_FF1:
         case ACVP_SUB_AES_FF3:
-            if (value >= ACVP_AES_FPE_RADIX_MIN && value <= ACVP_AES_FPE_RADIX_MAX) {
+            if (value >= ACVP_AES_FPE_RADIX_MIN &&
+                value <= ACVP_AES_FPE_RADIX_MAX) {
                 retval = ACVP_SUCCESS;
             }
             break;
@@ -1282,8 +1339,10 @@ static ACVP_RESULT acvp_validate_sym_cipher_parm_value(ACVP_CIPHER cipher, ACVP_
     return retval;
 }
 
-static ACVP_RESULT acvp_validate_sym_cipher_domain_value(ACVP_CIPHER cipher, ACVP_SYM_CIPH_DOMAIN_PARM parm,
-                                                       int min, int max, int increment) {
+static ACVP_RESULT
+acvp_validate_sym_cipher_domain_value(ACVP_CIPHER cipher,
+                                      ACVP_SYM_CIPH_DOMAIN_PARM parm, int min,
+                                      int max, int increment) {
 
     ACVP_RESULT retval = ACVP_INVALID_ARG;
     ACVP_SUB_AES aes_alg = 0;
@@ -1493,27 +1552,27 @@ static ACVP_RESULT acvp_validate_sym_cipher_domain_value(ACVP_CIPHER cipher, ACV
             }
             break;
         case ACVP_SUB_AES_FF1:
-        switch (parm) {
-        case ACVP_SYM_CIPH_DOMAIN_PTLEN:
-            if (min >= ACVP_AES_FPE_PT_BYTE_MIN &&
-                max <= ACVP_AES_FPE_PT_BYTE_MAX) {
-                retval = ACVP_SUCCESS;
+            switch (parm) {
+            case ACVP_SYM_CIPH_DOMAIN_PTLEN:
+                if (min >= ACVP_AES_FPE_PT_BYTE_MIN &&
+                    max <= ACVP_AES_FPE_PT_BYTE_MAX) {
+                    retval = ACVP_SUCCESS;
+                }
+                break;
+            case ACVP_SYM_CIPH_DOMAIN_TWEAKLEN:
+                if (min >= ACVP_AES_FPE_TWEAK_MIN &&
+                    max <= ACVP_AES_FPE_TWEAK_MAX &&
+                    increment == ACVP_AES_FPE_TWEAK_INC) {
+                    retval = ACVP_SUCCESS;
+                }
+                break;
+            case ACVP_SYM_CIPH_DOMAIN_IVLEN:
+            case ACVP_SYM_CIPH_DOMAIN_AADLEN:
+            case ACVP_SYM_CIPH_DOMAIN_DULEN:
+            default:
+                break;
             }
             break;
-        case ACVP_SYM_CIPH_DOMAIN_TWEAKLEN:
-            if (min >= ACVP_AES_FPE_TWEAK_MIN &&
-                max <= ACVP_AES_FPE_TWEAK_MAX &&
-                increment == ACVP_AES_FPE_TWEAK_INC) {
-                retval = ACVP_SUCCESS;
-            }
-            break;
-        case ACVP_SYM_CIPH_DOMAIN_IVLEN:
-        case ACVP_SYM_CIPH_DOMAIN_AADLEN:
-        case ACVP_SYM_CIPH_DOMAIN_DULEN:
-        default:
-            break;
-        }
-        break;
         case ACVP_SUB_AES_FF3:
             switch (parm) {
             case ACVP_SYM_CIPH_DOMAIN_PTLEN:
@@ -1632,7 +1691,8 @@ static ACVP_RESULT acvp_validate_sym_cipher_domain_value(ACVP_CIPHER cipher, ACV
     return retval;
 }
 
-static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG pre_req) {
+static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher,
+                                            ACVP_PREREQ_ALG pre_req) {
     switch (cipher) {
     case ACVP_AES_GCM:
     case ACVP_AES_GCM_SIV:
@@ -1654,8 +1714,7 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_AES_XPN:
     case ACVP_AES_FF1:
     case ACVP_AES_FF3:
-        if (pre_req == ACVP_PREREQ_AES ||
-            pre_req == ACVP_PREREQ_DRBG) {
+        if (pre_req == ACVP_PREREQ_AES || pre_req == ACVP_PREREQ_DRBG) {
             return ACVP_SUCCESS;
         }
         break;
@@ -1693,18 +1752,16 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
             return ACVP_SUCCESS;
         }
         break;
-     case ACVP_HMACDRBG:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_HMAC) {
-                return ACVP_SUCCESS;
+    case ACVP_HMACDRBG:
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_HMAC) {
+            return ACVP_SUCCESS;
         }
         break;
-     case ACVP_CTRDRBG:
-         if (pre_req == ACVP_PREREQ_AES ||
-             pre_req == ACVP_PREREQ_TDES) {
-             return ACVP_SUCCESS;
-         }
-         break;
+    case ACVP_CTRDRBG:
+        if (pre_req == ACVP_PREREQ_AES || pre_req == ACVP_PREREQ_TDES) {
+            return ACVP_SUCCESS;
+        }
+        break;
     case ACVP_HMAC_SHA1:
     case ACVP_HMAC_SHA2_224:
     case ACVP_HMAC_SHA2_256:
@@ -1721,14 +1778,12 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
         }
         break;
     case ACVP_CMAC_AES:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_AES) {
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_AES) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_CMAC_TDES:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_TDES) {
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_TDES) {
             return ACVP_SUCCESS;
         }
         break;
@@ -1740,11 +1795,15 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_DSA_PQGVER:
     case ACVP_DSA_SIGGEN:
     case ACVP_DSA_SIGVER:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_DRBG) {
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_DRBG) {
             return ACVP_SUCCESS;
         }
         break;
+    case ACVP_ASCON_AEAD128:
+    case ACVP_ASCON_CXOF128:
+    case ACVP_ASCON_HASH256:
+    case ACVP_ASCON_XOF128:
+        return ACVP_SUCCESS;
     case ACVP_RSA_KEYGEN:
     case ACVP_RSA_SIGGEN:
     case ACVP_RSA_SIGVER:
@@ -1759,17 +1818,14 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_EDDSA_KEYVER:
     case ACVP_EDDSA_SIGGEN:
     case ACVP_EDDSA_SIGVER:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_DRBG) {
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_DRBG) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KDF135_SNMP:
     case ACVP_KDF135_SSH:
-        if (pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_TDES ||
-            pre_req == ACVP_PREREQ_AES) {
+        if (pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_TDES || pre_req == ACVP_PREREQ_AES) {
             return ACVP_SUCCESS;
         }
         break;
@@ -1780,16 +1836,13 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
         break;
     case ACVP_KDF135_IKEV2:
     case ACVP_KDF135_IKEV1:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_SHA) {
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KDF108:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_CMAC ||
-            pre_req == ACVP_PREREQ_KMAC ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_CMAC || pre_req == ACVP_PREREQ_KMAC ||
             pre_req == ACVP_PREREQ_KAS) {
             return ACVP_SUCCESS;
         }
@@ -1800,10 +1853,9 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
         }
         break;
     case ACVP_KDF_TLS12:
-        if (pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_SHA) {
-                return ACVP_SUCCESS;
-            }
+        if (pre_req == ACVP_PREREQ_HMAC || pre_req == ACVP_PREREQ_SHA) {
+            return ACVP_SUCCESS;
+        }
         break;
     case ACVP_KDF_TLS13:
         if (pre_req == ACVP_PREREQ_HMAC) {
@@ -1813,12 +1865,9 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_KAS_ECC_COMP:
     case ACVP_KAS_ECC_SSC:
     case ACVP_KAS_ECC_NOCOMP:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_CMAC ||
-            pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_CCM ||
-            pre_req == ACVP_PREREQ_ECDSA) {
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_CMAC || pre_req == ACVP_PREREQ_SHA ||
+            pre_req == ACVP_PREREQ_CCM || pre_req == ACVP_PREREQ_ECDSA) {
             return ACVP_SUCCESS;
         }
         break;
@@ -1830,52 +1879,43 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_KAS_FFC_COMP:
     case ACVP_KAS_FFC_NOCOMP:
     case ACVP_KAS_FFC_SSC:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_CMAC ||
-            pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_SAFE_PRIMES ||
-            pre_req == ACVP_PREREQ_CCM ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_CMAC || pre_req == ACVP_PREREQ_SHA ||
+            pre_req == ACVP_PREREQ_SAFE_PRIMES || pre_req == ACVP_PREREQ_CCM ||
             pre_req == ACVP_PREREQ_DSA) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KTS_IFC:
-        if (pre_req == ACVP_PREREQ_DRBG || // will need to add macs if/when supported
+        if (pre_req ==
+                ACVP_PREREQ_DRBG || // will need to add macs if/when supported
             pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_RSA ||
+            pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_RSA ||
             pre_req == ACVP_PREREQ_RSADP) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KAS_IFC_SSC:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_SHA ||
-            pre_req == ACVP_PREREQ_RSA ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_SHA || pre_req == ACVP_PREREQ_RSA ||
             pre_req == ACVP_PREREQ_RSADP) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KDA_ONESTEP:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
-            pre_req == ACVP_PREREQ_KMAC ||
-            pre_req == ACVP_PREREQ_SHA) {
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
+            pre_req == ACVP_PREREQ_KMAC || pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KDA_TWOSTEP:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
             pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_KDA_HKDF:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_HMAC ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_HMAC ||
             pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
@@ -1892,8 +1932,7 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
         break;
     case ACVP_SAFE_PRIMES_KEYGEN:
     case ACVP_SAFE_PRIMES_KEYVER:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_SHA) {
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
         break;
@@ -1909,16 +1948,14 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
     case ACVP_ML_DSA_SIGVER:
     case ACVP_ML_KEM_KEYGEN:
     case ACVP_ML_KEM_XCAP:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_SHA) {
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_SHA) {
             return ACVP_SUCCESS;
         }
         break;
     case ACVP_SLH_DSA_KEYGEN:
     case ACVP_SLH_DSA_SIGGEN:
     case ACVP_SLH_DSA_SIGVER:
-        if (pre_req == ACVP_PREREQ_DRBG ||
-            pre_req == ACVP_PREREQ_SHA ||
+        if (pre_req == ACVP_PREREQ_DRBG || pre_req == ACVP_PREREQ_SHA ||
             pre_req == ACVP_PREREQ_HMAC) {
             return ACVP_SUCCESS;
         }
@@ -1941,8 +1978,7 @@ static ACVP_RESULT acvp_validate_prereq_val(ACVP_CIPHER cipher, ACVP_PREREQ_ALG 
 // Append a pre req val to the list of prereqs
 static ACVP_RESULT acvp_add_prereq_val(ACVP_CIPHER cipher,
                                        ACVP_CAPS_LIST *cap_list,
-                                       ACVP_PREREQ_ALG pre_req,
-                                       char *value) {
+                                       ACVP_PREREQ_ALG pre_req, char *value) {
     ACVP_PREREQ_LIST *prereq_entry, *prereq_entry_2;
     ACVP_RESULT result;
 
@@ -1972,10 +2008,8 @@ static ACVP_RESULT acvp_add_prereq_val(ACVP_CIPHER cipher,
     return ACVP_SUCCESS;
 }
 
-ACVP_RESULT acvp_cap_set_prereq(ACVP_CTX *ctx,
-                                ACVP_CIPHER cipher,
-                                ACVP_PREREQ_ALG pre_req_cap,
-                                char *value) {
+ACVP_RESULT acvp_cap_set_prereq(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                                ACVP_PREREQ_ALG pre_req_cap, char *value) {
     ACVP_CAPS_LIST *cap_list;
 
     if (!ctx) {
@@ -1992,20 +2026,11 @@ ACVP_RESULT acvp_cap_set_prereq(ACVP_CTX *ctx,
         return ACVP_NO_CAP;
     }
 
-    cap_list->has_prereq = 1;     // make sure this is set
+    cap_list->has_prereq = 1; // make sure this is set
     // Add the value to the cap
     return acvp_add_prereq_val(cipher, cap_list, pre_req_cap, value);
 }
 
-/*
- * The user should call this after invoking acvp_enable_sym_cipher_cap()
- * to specify the supported key lengths, PT lengths, AAD lengths, IV
- * lengths, and tag lengths. This is called multiple times, for different parms
- *
- * NOTE: Sym ciphers originally used range values instead of domain. Range values
- * will be phased out slowly where applicable. For now, allow either set domain OR
- * set parm to be called for a param, but not both.
- */
 ACVP_RESULT acvp_cap_sym_cipher_set_domain(ACVP_CTX *ctx,
                                            ACVP_CIPHER cipher,
                                            ACVP_SYM_CIPH_DOMAIN_PARM parm,
@@ -5662,12 +5687,172 @@ ACVP_RESULT acvp_cap_dsa_set_parm(ACVP_CTX *ctx,
     return result;
 }
 
+ACVP_RESULT acvp_cap_ascon_set_value(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                                     ACVP_ASCON_MODE mode,
+                                     ACVP_ASCON_PARM param, int value) {
+    if (cipher != ACVP_ASCON_AEAD128) {
+        return ACVP_INVALID_ARG;
+    }
+
+    // Locate this cipher in the caps array
+    ACVP_CAPS_LIST *cap_list = acvp_locate_cap_entry(ctx, cipher);
+    if (!cap_list) {
+        ACVP_LOG_ERR("Cap entry not found.");
+        return ACVP_NO_CAP;
+    }
+    ACVP_ASCON_CAP *ascon_cap = cap_list->cap.ascon_cap;
+    if (ascon_cap->cipher != ACVP_ASCON_AEAD128) {
+        ACVP_LOG_ERR("Only Ascon AEAD128 mode can have values set (expected: "
+                     "%d, found: %d)",
+                     ACVP_ASCON_AEAD128, ascon_cap->cipher);
+        return ACVP_INVALID_ARG;
+    }
+
+    switch (param) {
+    case ACVP_ASCON_NONCEMASK_PARM:
+        ascon_cap->nonce_masking = (bool)value;
+        break;
+    default:
+        ACVP_LOG_ERR("Bad parameter name. If adding a direction, use "
+                     "`acvp_cap_ascon_append_value` instead");
+        return ACVP_INVALID_ARG;
+    }
+
+    return ACVP_SUCCESS;
+}
+
+ACVP_RESULT acvp_cap_ascon_append_value(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                                        ACVP_ASCON_MODE mode,
+                                        ACVP_ASCON_PARM param, int value) {
+    if (cipher != ACVP_ASCON_AEAD128) {
+        return ACVP_INVALID_ARG;
+    }
+
+    // Locate this cipher in the caps array
+    ACVP_CAPS_LIST *cap_list = acvp_locate_cap_entry(ctx, cipher);
+    if (!cap_list) {
+        ACVP_LOG_ERR("Cap entry not found.");
+        return ACVP_NO_CAP;
+    }
+    ACVP_ASCON_CAP *ascon_cap = cap_list->cap.ascon_cap;
+
+    ACVP_ASCON_DIRECTION dir = (ACVP_ASCON_DIRECTION)value;
+    switch (param) {
+    case ACVP_ASCON_DIR_PARM:
+        if (dir != ACVP_ASCON_ENCRYPT && dir != ACVP_ASCON_DECRYPT) {
+            ACVP_LOG_ERR("Bad direction value");
+            return ACVP_INVALID_ARG;
+        }
+
+        if (!ascon_cap->direction) {
+            ascon_cap->direction = calloc(1, sizeof(ACVP_PARAM_LIST));
+        }
+
+        ACVP_PARAM_LIST *item = ascon_cap->direction;
+        if (!item) {
+            return ACVP_MALLOC_FAIL;
+        }
+
+        switch (dir) {
+        case ACVP_ASCON_ENCRYPT:
+        case ACVP_ASCON_DECRYPT:
+            while (item->next) {
+                item = item->next;
+            }
+            item->next = (ACVP_PARAM_LIST *)calloc(1, sizeof(ACVP_PARAM_LIST));
+            item->param = value;
+            break;
+        default:
+            ACVP_LOG_ERR("Bad direction value. Expected %d or %d, found %d",
+                         ACVP_ASCON_ENCRYPT, ACVP_ASCON_DECRYPT, dir);
+            return ACVP_INVALID_ARG;
+        }
+
+        break;
+    default:
+        ACVP_LOG_ERR("Bad parameter. Only 'direction' can be appended to");
+        return ACVP_INVALID_ARG;
+    }
+
+    return ACVP_SUCCESS;
+}
+
+static ACVP_RESULT acvp_cap_ascon_aead128_set_domain(ACVP_ASCON_CAP *cap,
+                                                     ACVP_ASCON_PARM param,
+                                                     int min, int max,
+                                                     int increment) {
+    switch (param) {
+    case ACVP_ASCON_PAYLEN_PARM:
+        cap->payload_len.min = min;
+        cap->payload_len.max = max;
+        cap->payload_len.increment = increment;
+        break;
+    case ACVP_ASCON_ADLEN_PARM:
+        cap->ad_len.min = min;
+        cap->ad_len.max = max;
+        cap->ad_len.increment = increment;
+        break;
+    case ACVP_ASCON_TAGLEN_PARM:
+        cap->tag_len.min = min;
+        cap->tag_len.max = max;
+        cap->tag_len.increment = increment;
+        break;
+    default:
+        return ACVP_INVALID_ARG;
+    }
+
+    return ACVP_SUCCESS;
+}
+
+ACVP_RESULT
+acvp_cap_ascon_set_domain(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                          ACVP_ASCON_MODE mode, ACVP_ASCON_PARM param, int min,
+                          int max, int increment) {
+    // Locate this cipher in the caps array
+    ACVP_CAPS_LIST *cap_list = acvp_locate_cap_entry(ctx, cipher);
+    if (!cap_list) {
+        ACVP_LOG_ERR("Cap entry not found.");
+        return ACVP_NO_CAP;
+    }
+    ACVP_ASCON_CAP *ascon_cap = cap_list->cap.ascon_cap;
+
+    switch (mode) {
+    case ACVP_ASCON_MODE_AEAD128:
+        return acvp_cap_ascon_aead128_set_domain(ascon_cap, param, min, max,
+                                                 increment);
+    case ACVP_ASCON_MODE_CXOF128:
+        if (param == ACVP_ASCON_CUSSTRLEN_PARM) {
+            ascon_cap->cusstr_len.min = min;
+            ascon_cap->cusstr_len.max = max;
+            ascon_cap->cusstr_len.increment = increment;
+        }
+    case ACVP_ASCON_MODE_XOF128:
+        if (param == ACVP_ASCON_OUTLEN_PARM) {
+            ascon_cap->out_len.min = min;
+            ascon_cap->out_len.max = max;
+            ascon_cap->out_len.increment = increment;
+        }
+    case ACVP_ASCON_MODE_HASH256:
+        if (param != ACVP_ASCON_MSGLEN_PARM) {
+            return ACVP_INVALID_ARG;
+        } else {
+            ascon_cap->msg_len.min = min;
+            ascon_cap->msg_len.max = max;
+            ascon_cap->msg_len.increment = increment;
+        }
+        break;
+    default:
+        return ACVP_INVALID_ARG;
+    }
+
+    return ACVP_SUCCESS;
+}
+
 /*
  * The user should call this after invoking acvp_enable_kdf135_snmp_cap()
  * to specify kdf parameters
  */
-ACVP_RESULT acvp_cap_kdf135_snmp_set_parm(ACVP_CTX *ctx,
-                                          ACVP_CIPHER kcap,
+ACVP_RESULT acvp_cap_kdf135_snmp_set_parm(ACVP_CTX *ctx, ACVP_CIPHER kcap,
                                           ACVP_KDF135_SNMP_PARAM param,
                                           int value) {
     ACVP_CAPS_LIST *cap;
@@ -5707,8 +5892,7 @@ ACVP_RESULT acvp_cap_kdf135_snmp_set_parm(ACVP_CTX *ctx,
  * to specify the hex string engine id. acvp_enable_kdf135_snmp_cap_parm()
  * should be used to specify password length
  */
-ACVP_RESULT acvp_cap_kdf135_snmp_set_engid(ACVP_CTX *ctx,
-                                           ACVP_CIPHER kcap,
+ACVP_RESULT acvp_cap_kdf135_snmp_set_engid(ACVP_CTX *ctx, ACVP_CIPHER kcap,
                                            const char *engid) {
     ACVP_CAPS_LIST *cap;
     ACVP_KDF135_SNMP_CAP *kdf135_snmp_cap;
@@ -5721,7 +5905,8 @@ ACVP_RESULT acvp_cap_kdf135_snmp_set_engid(ACVP_CTX *ctx,
     if (!engid) {
         return ACVP_INVALID_ARG;
     }
-    if (strnlen_s(engid, ACVP_KDF135_SNMP_ENGID_MAX_STR + 1) > ACVP_KDF135_SNMP_ENGID_MAX_STR) {
+    if (strnlen_s(engid, ACVP_KDF135_SNMP_ENGID_MAX_STR + 1) >
+        ACVP_KDF135_SNMP_ENGID_MAX_STR) {
         ACVP_LOG_ERR("engid too long");
         return ACVP_INVALID_ARG;
     }
@@ -5741,8 +5926,9 @@ ACVP_RESULT acvp_cap_kdf135_snmp_set_engid(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_kdf135_srtp_enable(ACVP_CTX *ctx,
-                                        int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_srtp_enable(ACVP_CTX *ctx,
+                            int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5753,7 +5939,8 @@ ACVP_RESULT acvp_cap_kdf135_srtp_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_SRTP_TYPE, ACVP_KDF135_SRTP, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_SRTP_TYPE, ACVP_KDF135_SRTP,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5764,8 +5951,9 @@ ACVP_RESULT acvp_cap_kdf135_srtp_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_kdf135_ikev2_enable(ACVP_CTX *ctx,
-                                         int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_ikev2_enable(ACVP_CTX *ctx,
+                             int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5776,7 +5964,8 @@ ACVP_RESULT acvp_cap_kdf135_ikev2_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_IKEV2_TYPE, ACVP_KDF135_IKEV2, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_IKEV2_TYPE,
+                                  ACVP_KDF135_IKEV2, crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5787,9 +5976,9 @@ ACVP_RESULT acvp_cap_kdf135_ikev2_enable(ACVP_CTX *ctx,
     return result;
 }
 
-
-ACVP_RESULT acvp_cap_kdf135_x942_enable(ACVP_CTX *ctx,
-                                        int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_x942_enable(ACVP_CTX *ctx,
+                            int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5800,7 +5989,8 @@ ACVP_RESULT acvp_cap_kdf135_x942_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_X942_TYPE, ACVP_KDF135_X942, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_X942_TYPE, ACVP_KDF135_X942,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5811,9 +6001,9 @@ ACVP_RESULT acvp_cap_kdf135_x942_enable(ACVP_CTX *ctx,
     return result;
 }
 
-
-ACVP_RESULT acvp_cap_kdf135_x963_enable(ACVP_CTX *ctx,
-                                        int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_x963_enable(ACVP_CTX *ctx,
+                            int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5824,7 +6014,8 @@ ACVP_RESULT acvp_cap_kdf135_x963_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_X963_TYPE, ACVP_KDF135_X963, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_X963_TYPE, ACVP_KDF135_X963,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5835,8 +6026,9 @@ ACVP_RESULT acvp_cap_kdf135_x963_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_kdf135_ikev1_enable(ACVP_CTX *ctx,
-                                         int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_ikev1_enable(ACVP_CTX *ctx,
+                             int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5847,7 +6039,8 @@ ACVP_RESULT acvp_cap_kdf135_ikev1_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_IKEV1_TYPE, ACVP_KDF135_IKEV1, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_IKEV1_TYPE,
+                                  ACVP_KDF135_IKEV1, crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5858,8 +6051,9 @@ ACVP_RESULT acvp_cap_kdf135_ikev1_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_kdf108_enable(ACVP_CTX *ctx,
-                                   int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf108_enable(ACVP_CTX *ctx,
+                       int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5870,7 +6064,8 @@ ACVP_RESULT acvp_cap_kdf108_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF108_TYPE, ACVP_KDF108, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF108_TYPE, ACVP_KDF108,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5881,32 +6076,9 @@ ACVP_RESULT acvp_cap_kdf108_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_kdf135_snmp_enable(ACVP_CTX *ctx,
-                                        int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
-    ACVP_RESULT result = ACVP_SUCCESS;
-
-    if (!ctx) {
-        return ACVP_NO_CTX;
-    }
-
-    if (!crypto_handler) {
-        ACVP_LOG_ERR("NULL parameter 'crypto_handler'");
-        return ACVP_INVALID_ARG;
-    }
-
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_SNMP_TYPE, ACVP_KDF135_SNMP, crypto_handler);
-
-    if (result == ACVP_DUP_CIPHER) {
-        ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
-    } else if (result == ACVP_MALLOC_FAIL) {
-        ACVP_LOG_ERR("Failed to allocate capability object");
-    }
-
-    return result;
-}
-
-ACVP_RESULT acvp_cap_kdf135_ssh_enable(ACVP_CTX *ctx,
-                                       int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_snmp_enable(ACVP_CTX *ctx,
+                            int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5918,7 +6090,8 @@ ACVP_RESULT acvp_cap_kdf135_ssh_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_KDF135_SSH_TYPE, ACVP_KDF135_SSH, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_SNMP_TYPE, ACVP_KDF135_SNMP,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5929,8 +6102,9 @@ ACVP_RESULT acvp_cap_kdf135_ssh_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_pbkdf_enable(ACVP_CTX *ctx,
-                                  int (*crypto_handler) (ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_kdf135_ssh_enable(ACVP_CTX *ctx,
+                           int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -5942,7 +6116,8 @@ ACVP_RESULT acvp_cap_pbkdf_enable(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
 
-    result = acvp_cap_list_append(ctx, ACVP_PBKDF_TYPE, ACVP_PBKDF, crypto_handler);
+    result = acvp_cap_list_append(ctx, ACVP_KDF135_SSH_TYPE, ACVP_KDF135_SSH,
+                                  crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
@@ -5953,10 +6128,34 @@ ACVP_RESULT acvp_cap_pbkdf_enable(ACVP_CTX *ctx,
     return result;
 }
 
-ACVP_RESULT acvp_cap_pbkdf_set_domain(ACVP_CTX *ctx,
-                                      ACVP_PBKDF_PARM param,
-                                      int min, int max,
-                                      int increment) {
+ACVP_RESULT
+acvp_cap_pbkdf_enable(ACVP_CTX *ctx,
+                      int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+    ACVP_RESULT result = ACVP_SUCCESS;
+
+    if (!ctx) {
+        return ACVP_NO_CTX;
+    }
+
+    if (!crypto_handler) {
+        ACVP_LOG_ERR("NULL parameter 'crypto_handler'");
+        return ACVP_INVALID_ARG;
+    }
+
+    result =
+        acvp_cap_list_append(ctx, ACVP_PBKDF_TYPE, ACVP_PBKDF, crypto_handler);
+
+    if (result == ACVP_DUP_CIPHER) {
+        ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
+    } else if (result == ACVP_MALLOC_FAIL) {
+        ACVP_LOG_ERR("Failed to allocate capability object");
+    }
+
+    return result;
+}
+
+ACVP_RESULT acvp_cap_pbkdf_set_domain(ACVP_CTX *ctx, ACVP_PBKDF_PARM param,
+                                      int min, int max, int increment) {
     ACVP_CAPS_LIST *cap_list;
     ACVP_JSON_DOMAIN_OBJ *domain;
 
@@ -5971,24 +6170,21 @@ ACVP_RESULT acvp_cap_pbkdf_set_domain(ACVP_CTX *ctx,
 
     switch (param) {
     case ACVP_PBKDF_ITERATION_COUNT:
-        if (min < ACVP_PBKDF_ITERATION_MIN ||
-            max > ACVP_PBKDF_ITERATION_MAX) {
+        if (min < ACVP_PBKDF_ITERATION_MIN || max > ACVP_PBKDF_ITERATION_MAX) {
             ACVP_LOG_ERR("min or max outside of acceptable range");
             return ACVP_INVALID_ARG;
         }
         domain = &cap_list->cap.pbkdf_cap->iteration_count_domain;
         break;
     case ACVP_PBKDF_KEY_LEN:
-        if (min < ACVP_PBKDF_KEY_BIT_MIN ||
-            max > ACVP_PBKDF_KEY_BIT_MAX) {
+        if (min < ACVP_PBKDF_KEY_BIT_MIN || max > ACVP_PBKDF_KEY_BIT_MAX) {
             ACVP_LOG_ERR("min or max outside of acceptable range");
             return ACVP_INVALID_ARG;
         }
         domain = &cap_list->cap.pbkdf_cap->key_len_domain;
         break;
     case ACVP_PBKDF_PASSWORD_LEN:
-        if (min < ACVP_PBKDF_PASS_LEN_MIN ||
-            max > ACVP_PBKDF_PASS_LEN_MAX) {
+        if (min < ACVP_PBKDF_PASS_LEN_MIN || max > ACVP_PBKDF_PASS_LEN_MAX) {
             ACVP_LOG_ERR("min or max outside of acceptable range");
             return ACVP_INVALID_ARG;
         }
@@ -6013,11 +6209,9 @@ ACVP_RESULT acvp_cap_pbkdf_set_domain(ACVP_CTX *ctx,
     domain->increment = increment;
 
     return ACVP_SUCCESS;
-
 }
 
-ACVP_RESULT acvp_cap_pbkdf_set_parm(ACVP_CTX *ctx,
-                                    ACVP_PBKDF_PARM param,
+ACVP_RESULT acvp_cap_pbkdf_set_parm(ACVP_CTX *ctx, ACVP_PBKDF_PARM param,
                                     int value) {
     ACVP_CAPS_LIST *cap_list = NULL;
     ACVP_PBKDF_CAP *cap = NULL;
@@ -6026,7 +6220,8 @@ ACVP_RESULT acvp_cap_pbkdf_set_parm(ACVP_CTX *ctx,
 
     cap_list = acvp_locate_cap_entry(ctx, ACVP_PBKDF);
     if (!cap_list) {
-        ACVP_LOG_ERR("Cap entry not found. You must enable algorithm before setting parameters.");
+        ACVP_LOG_ERR("Cap entry not found. You must enable algorithm before "
+                     "setting parameters.");
         return ACVP_NO_CAP;
     }
     cap = cap_list->cap.pbkdf_cap;
@@ -6042,7 +6237,8 @@ ACVP_RESULT acvp_cap_pbkdf_set_parm(ACVP_CTX *ctx,
         return ACVP_INVALID_ARG;
     }
     if (acvp_is_in_name_list(cap->hmac_algs, alg_str)) {
-        ACVP_LOG_WARN("Attempting to register an hmac alg with PBKDF that has already been registered, skipping.");
+        ACVP_LOG_WARN("Attempting to register an hmac alg with PBKDF that has "
+                      "already been registered, skipping.");
     } else {
         result = acvp_append_name_list(&cap->hmac_algs, alg_str);
     }
@@ -6053,8 +6249,7 @@ ACVP_RESULT acvp_cap_pbkdf_set_parm(ACVP_CTX *ctx,
  * The user should call this after invoking acvp_enable_kdf135_ssh_cap()
  * to specify the kdf parameters.
  */
-ACVP_RESULT acvp_cap_kdf135_ssh_set_parm(ACVP_CTX *ctx,
-                                         ACVP_CIPHER kcap,
+ACVP_RESULT acvp_cap_kdf135_ssh_set_parm(ACVP_CTX *ctx, ACVP_CIPHER kcap,
                                          ACVP_KDF135_SSH_METHOD method,
                                          ACVP_HASH_ALG param) {
     ACVP_CAPS_LIST *cap;
@@ -6106,10 +6301,8 @@ ACVP_RESULT acvp_cap_kdf135_ssh_set_parm(ACVP_CTX *ctx,
  * The user should call this after invoking acvp_enable_kdf108_cap()
  * to specify the kdf parameters.
  */
-ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
-                                     ACVP_KDF108_MODE mode,
-                                     ACVP_KDF108_PARM param,
-                                     int value) {
+ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx, ACVP_KDF108_MODE mode,
+                                     ACVP_KDF108_PARM param, int value) {
     ACVP_CAPS_LIST *cap;
     ACVP_KDF108_CAP *kdf108_cap;
     ACVP_KDF108_MODE_PARAMS *mode_obj;
@@ -6166,13 +6359,13 @@ ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
     // Enforce MAC algorithm exclusions
     if (param == ACVP_KDF108_MAC_MODE) {
         if (mode == ACVP_KDF108_MODE_KMAC) {
-            if ( (value != ACVP_KDF108_MAC_MODE_KMAC_128) &&
-                 (value != ACVP_KDF108_MAC_MODE_KMAC_256)) {
+            if ((value != ACVP_KDF108_MAC_MODE_KMAC_128) &&
+                (value != ACVP_KDF108_MAC_MODE_KMAC_256)) {
                 return ACVP_INVALID_ARG;
             }
         } else {
-            if ( (value == ACVP_KDF108_MAC_MODE_KMAC_128) ||
-                 (value == ACVP_KDF108_MAC_MODE_KMAC_256)) {
+            if ((value == ACVP_KDF108_MAC_MODE_KMAC_128) ||
+                (value == ACVP_KDF108_MAC_MODE_KMAC_256)) {
                 return ACVP_INVALID_ARG;
             }
         }
@@ -6183,55 +6376,72 @@ ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
     case ACVP_KDF108_MAC_MODE:
         switch (value) {
         case ACVP_KDF108_MAC_MODE_CMAC_AES128:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_CMAC_AES_128);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_CMAC_AES_128);
             break;
         case ACVP_KDF108_MAC_MODE_CMAC_AES192:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_CMAC_AES_192);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_CMAC_AES_192);
             break;
         case ACVP_KDF108_MAC_MODE_CMAC_AES256:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_CMAC_AES_256);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_CMAC_AES_256);
             break;
         case ACVP_KDF108_MAC_MODE_CMAC_TDES:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_CMAC_TDES);
+            result =
+                acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_CMAC_TDES);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA1:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA1);
+            result =
+                acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA1);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA224:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_224);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_224);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA256:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_256);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_256);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA384:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_384);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_384);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA512:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_512);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_512);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA512_224:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_512_224);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_512_224);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA512_256:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA2_512_256);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA2_512_256);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA3_224:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA3_224);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA3_224);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA3_256:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA3_256);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA3_256);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA3_384:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA3_384);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA3_384);
             break;
         case ACVP_KDF108_MAC_MODE_HMAC_SHA3_512:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_HMAC_SHA3_512);
+            result = acvp_append_name_list(&mode_obj->mac_mode,
+                                           ACVP_ALG_HMAC_SHA3_512);
             break;
         case ACVP_KDF108_MAC_MODE_KMAC_128:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_KMAC_128);
+            result =
+                acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_KMAC_128);
             break;
         case ACVP_KDF108_MAC_MODE_KMAC_256:
-            result = acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_KMAC_256);
+            result =
+                acvp_append_name_list(&mode_obj->mac_mode, ACVP_ALG_KMAC_256);
             break;
         default:
             return ACVP_INVALID_ARG;
@@ -6243,19 +6453,25 @@ ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
     case ACVP_KDF108_FIXED_DATA_ORDER:
         switch (value) {
         case ACVP_KDF108_FIXED_DATA_ORDER_AFTER:
-            result = acvp_append_name_list(&mode_obj->data_order, ACVP_FIXED_DATA_ORDER_AFTER_STR);
+            result = acvp_append_name_list(&mode_obj->data_order,
+                                           ACVP_FIXED_DATA_ORDER_AFTER_STR);
             break;
         case ACVP_KDF108_FIXED_DATA_ORDER_BEFORE:
-            result = acvp_append_name_list(&mode_obj->data_order, ACVP_FIXED_DATA_ORDER_BEFORE_STR);
+            result = acvp_append_name_list(&mode_obj->data_order,
+                                           ACVP_FIXED_DATA_ORDER_BEFORE_STR);
             break;
         case ACVP_KDF108_FIXED_DATA_ORDER_MIDDLE:
-            result = acvp_append_name_list(&mode_obj->data_order, ACVP_FIXED_DATA_ORDER_MIDDLE_STR);
+            result = acvp_append_name_list(&mode_obj->data_order,
+                                           ACVP_FIXED_DATA_ORDER_MIDDLE_STR);
             break;
         case ACVP_KDF108_FIXED_DATA_ORDER_NONE:
-            result = acvp_append_name_list(&mode_obj->data_order, ACVP_FIXED_DATA_ORDER_NONE_STR);
+            result = acvp_append_name_list(&mode_obj->data_order,
+                                           ACVP_FIXED_DATA_ORDER_NONE_STR);
             break;
         case ACVP_KDF108_FIXED_DATA_ORDER_BEFORE_ITERATOR:
-            result = acvp_append_name_list(&mode_obj->data_order, ACVP_FIXED_DATA_ORDER_BEFORE_ITERATOR_STR);
+            result = acvp_append_name_list(
+                &mode_obj->data_order,
+                ACVP_FIXED_DATA_ORDER_BEFORE_ITERATOR_STR);
             break;
         default:
             return ACVP_INVALID_ARG;
@@ -6265,39 +6481,46 @@ ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
         mode_obj->empty_iv_support = value;
         break;
     case ACVP_KDF108_REQUIRES_EMPTY_IV:
-       if (mode_obj->empty_iv_support == 0) {
-           ACVP_LOG_ERR("REQUIRES_EMPTY_IV for KDF108 can only be set if SUPPORTS_EMPTY_IV is true");
-           return ACVP_INVALID_ARG;
-       } else {
+        if (mode_obj->empty_iv_support == 0) {
+            ACVP_LOG_ERR("REQUIRES_EMPTY_IV for KDF108 can only be set if "
+                         "SUPPORTS_EMPTY_IV is true");
+            return ACVP_INVALID_ARG;
+        } else {
             mode_obj->requires_empty_iv = value;
-       }
-       break;
+        }
+        break;
     case ACVP_KDF108_SUPPORTED_LEN:
-        if (acvp_append_sl_list(&mode_obj->supported_lens.values, value) != ACVP_SUCCESS) {
+        if (acvp_append_sl_list(&mode_obj->supported_lens.values, value) !=
+            ACVP_SUCCESS) {
             ACVP_LOG_ERR("Error adding supported length for KDF108 to list");
             return ACVP_MALLOC_FAIL;
         }
         break;
     case ACVP_KDF108_DERIVATION_KEYLEN: /**< KDF108-KMAC only */
-        if (acvp_append_sl_list(&mode_obj->derivation_keylens.values, value) != ACVP_SUCCESS) {
-            ACVP_LOG_ERR("Error adding derivation key length for KDF108 to list");
+        if (acvp_append_sl_list(&mode_obj->derivation_keylens.values, value) !=
+            ACVP_SUCCESS) {
+            ACVP_LOG_ERR(
+                "Error adding derivation key length for KDF108 to list");
             return ACVP_MALLOC_FAIL;
         }
         break;
-    case ACVP_KDF108_DERIVED_KEYLEN:    /**< KDF108-KMAC only */
-        if (acvp_append_sl_list(&mode_obj->derived_keylens.values, value) != ACVP_SUCCESS) {
+    case ACVP_KDF108_DERIVED_KEYLEN: /**< KDF108-KMAC only */
+        if (acvp_append_sl_list(&mode_obj->derived_keylens.values, value) !=
+            ACVP_SUCCESS) {
             ACVP_LOG_ERR("Error adding derived key length for KDF108 to list");
             return ACVP_MALLOC_FAIL;
         }
         break;
-    case ACVP_KDF108_CONTEXT_LEN:       /**< KDF108-KMAC only */
-        if (acvp_append_sl_list(&mode_obj->context_lens.values, value) != ACVP_SUCCESS) {
+    case ACVP_KDF108_CONTEXT_LEN: /**< KDF108-KMAC only */
+        if (acvp_append_sl_list(&mode_obj->context_lens.values, value) !=
+            ACVP_SUCCESS) {
             ACVP_LOG_ERR("Error adding context length for KDF108 to list");
             return ACVP_MALLOC_FAIL;
         }
         break;
-    case ACVP_KDF108_LABEL_LEN:         /**< KDF108-KMAC only */
-        if (acvp_append_sl_list(&mode_obj->label_lens.values, value) != ACVP_SUCCESS) {
+    case ACVP_KDF108_LABEL_LEN: /**< KDF108-KMAC only */
+        if (acvp_append_sl_list(&mode_obj->label_lens.values, value) !=
+            ACVP_SUCCESS) {
             ACVP_LOG_ERR("Error adding label length for KDF108 to list");
             return ACVP_MALLOC_FAIL;
         }
@@ -6316,8 +6539,7 @@ ACVP_RESULT acvp_cap_kdf108_set_parm(ACVP_CTX *ctx,
  * The user should call this after invoking acvp_enable_kdf135_ssh_cap()
  * to specify the kdf parameters.
  */
-ACVP_RESULT acvp_cap_kdf135_srtp_set_parm(ACVP_CTX *ctx,
-                                          ACVP_CIPHER cipher,
+ACVP_RESULT acvp_cap_kdf135_srtp_set_parm(ACVP_CTX *ctx, ACVP_CIPHER cipher,
                                           ACVP_KDF135_SRTP_PARAM param,
                                           int value) {
     ACVP_CAPS_LIST *cap;
@@ -6375,9 +6597,9 @@ ACVP_RESULT acvp_cap_kdf135_srtp_set_parm(ACVP_CTX *ctx,
     return ACVP_SUCCESS;
 }
 
-ACVP_RESULT acvp_cap_dsa_enable(ACVP_CTX *ctx,
-                                ACVP_CIPHER cipher,
-                                int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+ACVP_RESULT
+acvp_cap_dsa_enable(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                    int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
     ACVP_RESULT result = ACVP_SUCCESS;
 
     if (!ctx) {
@@ -6389,6 +6611,31 @@ ACVP_RESULT acvp_cap_dsa_enable(ACVP_CTX *ctx,
     }
 
     result = acvp_cap_list_append(ctx, ACVP_DSA_TYPE, cipher, crypto_handler);
+
+    if (result == ACVP_DUP_CIPHER) {
+        ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
+    } else if (result == ACVP_MALLOC_FAIL) {
+        ACVP_LOG_ERR("Failed to allocate capability object");
+    }
+
+    return result;
+}
+
+ACVP_RESULT
+acvp_cap_ascon_enable(ACVP_CTX *ctx, ACVP_CIPHER cipher,
+                      int (*crypto_handler)(ACVP_TEST_CASE *test_case)) {
+    ACVP_RESULT result = ACVP_SUCCESS;
+
+    if (!ctx) {
+        return ACVP_NO_CTX;
+    }
+
+    if (!crypto_handler) {
+        ACVP_LOG_ERR("NULL parameter 'crypto_handler'");
+        return ACVP_INVALID_ARG;
+    }
+
+    result = acvp_cap_list_append(ctx, ACVP_ASCON_TYPE, cipher, crypto_handler);
 
     if (result == ACVP_DUP_CIPHER) {
         ACVP_LOG_ERR("Capability previously enabled. Duplicate not allowed.");
